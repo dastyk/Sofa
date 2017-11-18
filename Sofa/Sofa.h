@@ -35,6 +35,18 @@ inline typename std::enable_if<I < sizeof...(Types), void>::type
 	setValue<I + 1, Types...>(tp, t, index);
 }
 
+template<std::size_t I = 0, typename... Types>
+inline typename std::enable_if<I == sizeof...(Types), void>::type
+copyValue(std::tuple<typename make_ptr_t<Types>::type...>& tp, std::size_t to, std::size_t from)
+{ }
+
+template<std::size_t I = 0, class... Types>
+inline typename std::enable_if<I < sizeof...(Types), void>::type
+	copyValue(std::tuple<typename make_ptr_t<Types>::type...>& tp, std::size_t to, std::size_t from)
+{
+	std::get<I>(tp)[to] = std::get<I>(tp)[from];
+	copyValue<I + 1, Types...>(tp, to, from);
+}
 
 template<class Key, class KeyHash, class... Types>
 class Sofa
@@ -109,15 +121,31 @@ public:
 	}
 
 
-	void erase(const Key key)
+	bool erase(const Key key)
 	{
 		if (const auto find = map.find(key); find != map.end())
 		{
-			
+			destroy(find->second);
+			return true;
 		}
+		return false;
 	}
-	typedef std::tuple<typename make_ptr_t<Key>::type, typename make_ptr_t<Types>::type...> type;
-	type typePointers;
+
+
+	void destroy(std::size_t at)
+	{
+		auto last = --used;
+
+		auto at_key = std::get<0>(typePointers)[at];
+		auto last_key = std::get<0>(typePointers)[last];
+
+		copyValue<0, Key, Types...>(typePointers, at, last);
+
+		map[last_key] = at;
+		map.erase(at_key);
+	}
+
+
 private:
 	void *data;
 	std::size_t used;
@@ -125,10 +153,8 @@ private:
 	std::size_t byteWidth;
 
 	const std::array<std::size_t, sizeof...(Types) + 1> typeSizes { sizeof(Key), sizeof(Types)...};
-	std::array<void*, sizeof...(Types)+1> aTypePointers{ nullptr };
-
-	
-	static const std::tuple<Types...> members;
+	typedef std::tuple<typename make_ptr_t<Key>::type, typename make_ptr_t<Types>::type...> type;
+	type typePointers;
 
 	std::unordered_map<Key, std::size_t, KeyHash> map;
 	
@@ -138,15 +164,6 @@ private:
 		std::size_t newAllocated = newSize;
 		void* newData = operator new(newAllocated*byteWidth);
 		type newTypePointers;
-
-	/*	std::array<void*, sizeof...(Types)+1> newatp;
-
-		newatp[0] = newData;
-		setupAP<1, Key, Types...>(newatp);
-
-		memcpyAP<0, Key, Types...>(newatp, aTypePointers);
-
-		aTypePointers = newatp;*/
 
 		std::get<0>(newTypePointers) = (std::tuple_element<0, type>::type) newData;
 		setupPointers<1, Key, Types...>(newTypePointers, newAllocated);
@@ -161,11 +178,6 @@ private:
 		int i = 0;
 	}
 
-	void Destroy(std::size_t at)
-	{
-
-	}
-
 
 	template<std::size_t I = 0, typename... Types>
 	inline typename std::enable_if<I == sizeof...(Types), void>::type
@@ -178,33 +190,6 @@ private:
 	{
 		memcpy(std::get<I>(t1), std::get<I>(t2), typeSizes[I] * used);
 		memcpyTuple<I + 1, Types...>(t1, t2);
-	}
-
-	template<std::size_t I = 0, typename... Types>
-	inline typename std::enable_if<I == sizeof...(Types), void>::type
-		memcpyAP(std::array<void*, sizeof...(Types)>&ap, std::array<void*, sizeof...(Types)>&ap2)
-	{ }
-
-	template<std::size_t I = 0, class... Types>
-	inline typename std::enable_if<I < sizeof...(Types), void>::type
-		memcpyAP(std::array<void*, sizeof...(Types)>&ap, std::array<void*, sizeof...(Types)>&ap2)
-	{
-		memcpy(ap[I], ap2[I], typeSizes[I] * used);
-		memcpyAP<I + 1, Types...>(ap, ap2);
-	}
-
-
-	template<std::size_t I = 0, typename... Types>
-	inline typename std::enable_if<I == sizeof...(Types), void>::type
-		setupAP(std::array<void*, sizeof...(Types)>&ap)
-	{ }
-
-	template<std::size_t I = 0, class... Types>
-	inline typename std::enable_if<I < sizeof...(Types), void>::type
-		setupAP(std::array<void*, sizeof...(Types)>&ap)
-	{
-		ap[I] = (char*)ap[I - 1] + typeSizes[I - 1] * allocated;
-		setupAP<I + 1, Types...>(ap);
 	}
 
 };
