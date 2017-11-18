@@ -1,7 +1,8 @@
 #include "Sofa.h"
 #include <chrono>
 
-
+#include <iostream>
+using namespace std;
 
 
 struct RenderableObjectData
@@ -52,7 +53,11 @@ void Allocate(size_t size)
 }
 
 
-
+enum Data
+{
+	hp,
+	visible
+};
 
 
 
@@ -68,37 +73,60 @@ int main()
 	Sofa<int, std::hash<int>, int, bool, char> sofa;
 	Sofa<int, std::hash<int>, int, bool, char> sofa2;
 	Sofa<int, std::hash<int>, int, bool, char> sofa3;
+	Sofa<int, std::hash<int>, int, bool, char> sofa4;
 	static const std::size_t count = 10000000;
+	{
+		auto s = std::chrono::high_resolution_clock::now();
+		for (int i = 0; i < count; i++)
+		{
+			sofa4.add(i, i * 10, i % 2, 'c');
+		}
+		auto e = std::chrono::high_resolution_clock::now();
+		auto diff = std::chrono::duration<float, std::milli>(e - s).count();
+		printf("Add Sofa T: %f\n", diff);
+	}
 	//{
 	//	auto s = std::chrono::high_resolution_clock::now();
 	//	for (int i = 0; i < count; i++)
 	//	{
-	//		sofa2.add(i, i * 10, i % 2, 'c');
+	//		auto index = sofa3.add(i);
+	//		std::get<0>(sofa3.typePointers)[index] = i * 10;
+	//		std::get<1>(sofa3.typePointers)[index] = i % 2;
+	//		std::get<2>(sofa3.typePointers)[index] = 'c';
 	//	}
 	//	auto e = std::chrono::high_resolution_clock::now();
 	//	auto diff = std::chrono::duration<float, std::milli>(e - s).count();
-	//	printf("Add Sofa T: %f\n", diff);
+	//	printf("Add Sofa P: %f\n", diff);
 	//}
-	/*{
-		auto s = std::chrono::high_resolution_clock::now();
-		for (int i = 0; i < count; i++)
-		{
-			auto index = sofa3.add(i);
-			std::get<0>(sofa3.typePointers)[index] = i * 10;
-			std::get<1>(sofa3.typePointers)[index] = i % 2;
-			std::get<2>(sofa3.typePointers)[index] = 'c';
-		}
-		auto e = std::chrono::high_resolution_clock::now();
-		auto diff = std::chrono::duration<float, std::milli>(e - s).count();
-		printf("Add Sofa P: %f\n", diff);
-	}*/
+
+
+	//{
+
+	//	for (int i = 0; i < 100; i++)
+	//	{
+	//		auto index = sofa3.add(i);
+	//		sofa3.get<0>()[index] = i * 10;
+	//		sofa3.get<1>()[index] = i % 2;
+	//		sofa3.get<2>()[index] = 'c';
+	//	}
+
+
+
+	//	for (size_t i = 0; i < sofa3.size(); i++)
+	//	{
+	//		cout << sofa3.get<hp>()[i] << endl;
+	//		cout << sofa3.get<visible>()[i] << endl;
+	//	}
+
+	//}
+
 
 	{
 		auto s = std::chrono::high_resolution_clock::now();
 		for (int i = 0; i < count; i++)
 		{
 			auto index = sofa.add(i);
-			sofa.set<0>(index, i * 10);
+			sofa.set<hp>(index, i * 10);
 			sofa.set<1>(index, i % 2);
 			sofa.set<2>(index, 'c');
 		}
@@ -106,8 +134,32 @@ int main()
 		auto diff = std::chrono::duration<float, std::milli>(e - s).count();
 		printf("Add Sofa: %f\n", diff);
 	}
-	
-	
+	{
+		auto s = std::chrono::high_resolution_clock::now();
+		for (int i = 0; i < count; i++)
+		{
+			auto index = sofa2.add(i);
+			sofa2.get<0>()[index] = i*10;
+			sofa2.get<1>()[index] = i % 2;
+			sofa2.get<2>()[index] = 'c';
+		}
+		auto e = std::chrono::high_resolution_clock::now();
+		auto diff = std::chrono::duration<float, std::milli>(e - s).count();
+		printf("Add SofaD: %f\n", diff);
+	}
+	{
+		auto s = std::chrono::high_resolution_clock::now();
+		for (int i = 0; i < count; i++)
+		{
+			auto index = sofa3.add(i);
+			sofa3.get<0>(index) = i * 10;
+			sofa3.get<1>(index) = i % 2;
+			sofa3.get<2>(index) = 'c';
+		}
+		auto e = std::chrono::high_resolution_clock::now();
+		auto diff = std::chrono::duration<float, std::milli>(e - s).count();
+		printf("Add SofaDI: %f\n", diff);
+	}
 	{
 		auto s = std::chrono::high_resolution_clock::now();
 		auto sum = 0;

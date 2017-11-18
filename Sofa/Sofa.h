@@ -46,10 +46,18 @@ public:
 			byteWidth += v;
 		Allocate(allocated);
 	}
-
+	~Sofa()
+	{
+		operator delete(data);
+	}
 	void clear()
 	{
 		used = 0;
+	}
+
+	void shrink_to_fit()
+	{
+		Allocate(used);
 	}
 	inline std::optional<std::pair<Key, std::size_t>> find(const Key key)const
 	{
@@ -61,7 +69,7 @@ public:
 
 	inline std::size_t size()const { return used; };
 
-	inline void add(const Key key, const Types... args)
+	void add(const Key key, const Types... args)
 	{
 		if (used + 1 > allocated)
 			Allocate(allocated * 2);
@@ -70,7 +78,7 @@ public:
 		setValue<0, Key, Types...>(typePointers, tpl, index);
 	}
 
-	inline std::size_t add(const Key key)
+	std::size_t add(const Key key)
 	{
 		if (used + 1 > allocated)
 			Allocate(allocated * 2);
@@ -91,6 +99,15 @@ public:
 		//using type = typename std::tuple_element<N, std::tuple<Types...>>::type;
 		//return ((type*)aTypePointers[N])[index];
 	}
+
+	template<std::size_t N>
+	inline auto& get()
+	{
+		return std::get<N>(typePointers);
+		//using type = typename std::tuple_element<N, std::tuple<Types...>>::type;
+		//return ((type*)aTypePointers[N])[index];
+	}
+
 
 	void erase(const Key key)
 	{
