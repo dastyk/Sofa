@@ -18,7 +18,7 @@ template<std::size_t I = 0, class... Types>
 inline typename std::enable_if<I < sizeof...(Types), void>::type
 	setupPointers(std::tuple<typename make_ptr_t<Types>::type...>& t, size_t allocated)
 {
-	std::get<I>(t) = reinterpret_cast<std::tuple_element<I, std::tuple<typename make_ptr_t<Types>::type...>>::type>(std::get<I -1>(t) + allocated);
+	std::get<I>(t) = reinterpret_cast<typename std::tuple_element<I, std::tuple<typename make_ptr_t<Types>::type...>>::type>(std::get<I -1>(t) + allocated);
 	setupPointers<I + 1, Types...>(t, allocated);
 }
 
@@ -67,7 +67,7 @@ public:
 		used = 0;
 	}
 
-	void shrink_to_fit()
+	inline void shrink_to_fit()
 	{
 		Allocate(used);
 	}

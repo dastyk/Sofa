@@ -1,6 +1,6 @@
 #include "Sofa.h"
 #include <chrono>
-
+#include "MultiAllocSofa.h"
 #include <iostream>
 using namespace std;
 
@@ -76,6 +76,11 @@ int main()
 	sofa.erase(123);
 
 
+	SofaMA<int, std::hash<int>, int, bool> sofaMA;
+	sofaMA.add(123, 321, true);
+	sofaMA.add(124, 322, true);
+	int i = 0;
+	sofaMA.erase(123);
 	//Sofa<int, std::hash<int>, int, bool, char> sofa2;
 	//Sofa<int, std::hash<int>, int, bool, char> sofa3;
 	//Sofa<int, std::hash<int>, int, bool, char> sofa4;

@@ -23,5 +23,8 @@
     <ClInclude Include="Sofa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MultiAllocSofa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
