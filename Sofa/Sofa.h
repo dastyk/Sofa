@@ -159,7 +159,11 @@ public:
 	{
 		return std::get<N>(typePointers)[index];
 	}
-
+	template<std::size_t N>
+	inline const auto& getConst(std::size_t index)const
+	{
+		return std::get<N>(typePointers)[index];
+	}
 	template<std::size_t N>
 	inline auto& get()
 	{
@@ -211,7 +215,7 @@ private:
 		void* newData = operator new(newAllocated*byteWidth);
 		type newTypePointers;
 
-		std::get<0>(newTypePointers) = (std::tuple_element<0, type>::type) newData;
+		std::get<0>(newTypePointers) = (Key*) newData;
 		setupPointers<1, Key, Types...>(newTypePointers, newAllocated);
 
 		memcpyTuple<0, Key, Types...>(newTypePointers, typePointers);
