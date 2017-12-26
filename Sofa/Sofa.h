@@ -195,6 +195,10 @@ public:
 		map.erase(at_key);
 	}
 
+	std::size_t GetMemoryUsage()const
+	{
+		return byteWidth * allocated;
+	}
 
 private:
 	void *data;
