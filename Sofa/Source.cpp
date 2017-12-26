@@ -3,67 +3,67 @@
 
 #include <iostream>
 using namespace std;
-
-
-struct RenderableObjectData
-{
-	static const size_t size = sizeof(int) + sizeof(int) + sizeof(bool) + sizeof(char);
-	size_t allocated = 0;
-	size_t used = 0;
-	void* data = nullptr;
-	int* key;
-	int* v1;
-	bool* v2;
-	char* v3;
-};
-
-RenderableObjectData renderableObjectInfo;
-std::unordered_map<int, size_t, std::hash<int>> entityToRenderableObjectInfoIndex;
-
-
-
-
-
-
-void Allocate(size_t size)
-{
-	_ASSERT(size > renderableObjectInfo.allocated);
-
-	// Allocate new memory
-	RenderableObjectData newData;
-	newData.allocated = size;
-	newData.data = operator new(size * RenderableObjectData::size);
-	newData.used = renderableObjectInfo.used;
-
-	// Setup the new pointers
-	newData.key = (int*)newData.data;
-	newData.v1 = (int*)(newData.key + newData.allocated);
-	newData.v2 = (bool*)(newData.v1 + newData.allocated);
-	newData.v3 = (char*)(newData.v2 + newData.allocated);
-
-	// Copy data
-	memcpy(newData.key, renderableObjectInfo.key, renderableObjectInfo.used * sizeof(int));
-	memcpy(newData.v1, renderableObjectInfo.v1, renderableObjectInfo.used * sizeof(int));
-	memcpy(newData.v2, renderableObjectInfo.v2, renderableObjectInfo.used * sizeof(bool));
-	memcpy(newData.v3, renderableObjectInfo.v3, renderableObjectInfo.used * sizeof(char));
-
-	// Delete old data;
-	operator delete(renderableObjectInfo.data);
-	renderableObjectInfo = newData;
-}
-
-
-enum Data
-{
-	hp,
-	visible
-};
+//
+//
+//struct RenderableObjectData
+//{
+//	static const size_t size = sizeof(int) + sizeof(int) + sizeof(bool) + sizeof(char);
+//	size_t allocated = 0;
+//	size_t used = 0;
+//	void* data = nullptr;
+//	int* key;
+//	int* v1;
+//	bool* v2;
+//	char* v3;
+//};
+//
+//RenderableObjectData renderableObjectInfo;
+//std::unordered_map<int, size_t, std::hash<int>> entityToRenderableObjectInfoIndex;
+//
+//
+//
+//
+//
+//
+//void Allocate(size_t size)
+//{
+//	_ASSERT(size > renderableObjectInfo.allocated);
+//
+//	// Allocate new memory
+//	RenderableObjectData newData;
+//	newData.allocated = size;
+//	newData.data = operator new(size * RenderableObjectData::size);
+//	newData.used = renderableObjectInfo.used;
+//
+//	// Setup the new pointers
+//	newData.key = (int*)newData.data;
+//	newData.v1 = (int*)(newData.key + newData.allocated);
+//	newData.v2 = (bool*)(newData.v1 + newData.allocated);
+//	newData.v3 = (char*)(newData.v2 + newData.allocated);
+//
+//	// Copy data
+//	memcpy(newData.key, renderableObjectInfo.key, renderableObjectInfo.used * sizeof(int));
+//	memcpy(newData.v1, renderableObjectInfo.v1, renderableObjectInfo.used * sizeof(int));
+//	memcpy(newData.v2, renderableObjectInfo.v2, renderableObjectInfo.used * sizeof(bool));
+//	memcpy(newData.v3, renderableObjectInfo.v3, renderableObjectInfo.used * sizeof(char));
+//
+//	// Delete old data;
+//	operator delete(renderableObjectInfo.data);
+//	renderableObjectInfo = newData;
+//}
+//
+//
+//enum Data
+//{
+//	hp,
+//	visible
+//};
 
 
 
 int main()
 {
-	Allocate(64);
+	//Allocate(64);
 
 	Sofa<int, std::hash<int>, int, bool, char> sofa;
 
@@ -233,6 +233,6 @@ int main()
 	//	auto diff = std::chrono::duration<float, std::milli>(e - s).count();
 	//	printf("Find: %f, %d\n", diff, sum);
 	//}
-	getchar();
+	//getchar();
 	return 0;
 }
