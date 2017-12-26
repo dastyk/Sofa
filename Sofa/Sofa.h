@@ -117,6 +117,7 @@ public:
 		used = 0;
 	}
 
+
 	/*@brief Shrinks the block to exactly fit the amount used.*/
 	inline void shrink_to_fit()
 	{
@@ -203,7 +204,29 @@ public:
 	{
 		return byteWidth * allocated;
 	}
+	void Allocate(std::size_t newSize)
+	{
+		std::size_t newAllocated = newSize;
+		void* newData = operator new(newAllocated*byteWidth);
+		type newTypePointers;
 
+		std::get<0>(newTypePointers) = (Key*)newData;
+		setupPointers<1, Key, Types...>(newTypePointers, newAllocated);
+
+		memcpyTuple<0, Key, Types...>(newTypePointers, typePointers);
+
+		operator delete(data);
+		typePointers = newTypePointers;
+		allocated = newAllocated;
+		data = newData;
+	}
+	void Reinit(std::size_t newUsed)
+	{
+		used = newUsed;
+		map.clear();
+		for (std::size_t i = 0; i < used; i++)
+			map[std::get<0>(typePointers)[i]] = i;
+	}
 private:
 	void *data;
 	std::size_t used;
@@ -216,25 +239,7 @@ private:
 
 	std::unordered_map<Key, std::size_t, KeyHash> map;
 	
-	type asd;
-	void Allocate(std::size_t newSize)
-	{
-		std::size_t newAllocated = newSize;
-		void* newData = operator new(newAllocated*byteWidth);
-		type newTypePointers;
-
-		std::get<0>(newTypePointers) = (Key*) newData;
-		setupPointers<1, Key, Types...>(newTypePointers, newAllocated);
-
-		memcpyTuple<0, Key, Types...>(newTypePointers, typePointers);
-
-		operator delete(data);
-		typePointers = newTypePointers;
-		allocated = newAllocated;
-		data = newData;
-		
-		int i = 0;
-	}
+	
 
 
 	template<std::size_t I = 0, typename... Types>
