@@ -169,7 +169,11 @@ public:
 	{
 		return std::get<N>(typePointers);
 	}
-
+	template<std::size_t N>
+	inline const auto& getConst()const
+	{
+		return std::get<N>(typePointers);
+	}
 
 	bool erase(const Key key)
 	{
