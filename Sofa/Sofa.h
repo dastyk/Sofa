@@ -146,6 +146,7 @@ public:
 	{
 		if (used + 1 > allocated)
 			Allocate(allocated * 2);
+		std::get<0>(typePointers)[used] = key;
 		return map[key] = used++;
 	}
 
