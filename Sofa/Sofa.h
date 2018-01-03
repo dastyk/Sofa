@@ -115,8 +115,12 @@ public:
 	inline void clear()
 	{
 		used = 0;
+		map.clear();
 	}
-
+	inline size_t Allocated()const
+	{
+		return allocated;
+	}
 
 	/*@brief Shrinks the block to exactly fit the amount used.*/
 	inline void shrink_to_fit()
