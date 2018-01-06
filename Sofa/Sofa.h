@@ -5,15 +5,31 @@
 #include <unordered_map>
 #include <optional>
 #include <list>
-//types
+// Parameter pack pointer converter
 template<class T> struct make_ptr_t { typedef T* type; };
 template<class T> struct make_ptr_t<T*> { typedef T* type; };
 
+
+// Goes through the tuple and sets up the pointers for each attribute in the one allocation block. ( The stop recursion template)
 template<std::size_t I = 0, typename... Types>
 inline typename std::enable_if<I == sizeof...(Types), void>::type
 setupPointers(std::tuple<typename make_ptr_t<Types>::type...>& t, size_t allocated)
 { }
 
+// Goes through the tuple and sets up the pointers for each attribute in the one allocation block. 
+/*
+// Setup the new pointers
+newData.data = operator new(newSize);
+newData.key = (int*)newData.data;
+newData.v1 = (int*)(newData.key + newData.allocated);
+newData.v2 = (bool*)(newData.v1 + newData.allocated);
+newData.v3 = (char*)(newData.v2 + newData.allocated);
+
+|0|1|2|3|4|5|6|7|
+ ^		 ^
+ |		 |
+ int *	 bool*
+*/
 template<std::size_t I = 0, class... Types>
 inline typename std::enable_if<I < sizeof...(Types), void>::type
 	setupPointers(std::tuple<typename make_ptr_t<Types>::type...>& t, size_t allocated)
@@ -22,11 +38,30 @@ inline typename std::enable_if<I < sizeof...(Types), void>::type
 	setupPointers<I + 1, Types...>(t, allocated);
 }
 
+// 'Takes one tuple of values and inserts them into the tuple holding arrays in the correct location.( The stop recursion template)
 template<std::size_t I = 0, typename... Types>
 inline typename std::enable_if<I == sizeof...(Types), void>::type
 setValue(std::tuple<typename make_ptr_t<Types>::type...>& tp, const std::tuple<Types...>& t, std::size_t index)
 { }
 
+// Takes one tuple of values and inserts them into the tuple holding arrays in the correct location.
+/*
+|tp		|0		|1		|2		|3		|4		|5		|6	|
+-------------------------------------------------------------
+|int*	|123	|321	|1		|2		|2		|4		|8	|
+|bool*	|true	|false	|true	|true	|true	|false	|true
+
+
+| t		| Insert into slot 3
+-----
+| 1337	|
+| false	|
+
+|tp		|0		|1		|2		|3		|4		|5		|6	|
+-------------------------------------------------------------
+|int*	|123	|321	|1		| 1337	|2		|4		|8	|
+|bool*	|true	|false	|true	| false	|true	|false	|true
+*/
 template<std::size_t I = 0, class... Types>
 inline typename std::enable_if<I < sizeof...(Types), void>::type
 	setValue(std::tuple<typename make_ptr_t<Types>::type...>& tp,const std::tuple<Types...>& t, std::size_t index)
@@ -35,10 +70,24 @@ inline typename std::enable_if<I < sizeof...(Types), void>::type
 	setValue<I + 1, Types...>(tp, t, index);
 }
 
+// Copies an entry from one location to another ( The stop recursion template)
 template<std::size_t I = 0, typename... Types>
 inline typename std::enable_if<I == sizeof...(Types), void>::type
 copyValue(std::tuple<typename make_ptr_t<Types>::type...>& tp, std::size_t to, std::size_t from)
 { }
+// Copies an entry from one location to another
+/*
+|tp		|0		|1		|2		|3		|4		|5		|6	|
+-------------------------------------------------------------
+|int*	|123	|321	|1		|2		|2		|4		|8	|
+|bool*	|true	|false	|true	|true	|true	|false	|true
+
+Copy slot 6 to slot 3
+|tp		|0		|1		|2		|3		|4		|5		|6	|
+-------------------------------------------------------------
+|int*	|123	|321	|1		|8		|2		|4		|8	|
+|bool*	|true	|false	|true	|true	|true	|false	|true
+*/
 
 template<std::size_t I = 0, class... Types>
 inline typename std::enable_if<I < sizeof...(Types), void>::type
@@ -62,11 +111,18 @@ public:
 	{
 		operator delete(data);
 	}
-	void clear()
+	/*@brief Clear the entries, only sets used to 0. All memory and data is intact*/
+	inline void clear()
 	{
 		used = 0;
+		map.clear();
+	}
+	inline size_t Allocated()const
+	{
+		return allocated;
 	}
 
+	/*@brief Shrinks the block to exactly fit the amount used.*/
 	inline void shrink_to_fit()
 	{
 		Allocate(used);
@@ -94,6 +150,7 @@ public:
 	{
 		if (used + 1 > allocated)
 			Allocate(allocated * 2);
+		std::get<0>(typePointers)[used] = key;
 		return map[key] = used++;
 	}
 
@@ -101,25 +158,28 @@ public:
 	inline void set(std::size_t index,const type&& t)
 	{
 		std::get<N>(typePointers)[index] = t;
-		//((type*)aTypePointers[N])[index] = std::move(t);
 	}
 
 	template<std::size_t N>
 	inline auto& get(std::size_t index)
 	{
 		return std::get<N>(typePointers)[index];
-		//using type = typename std::tuple_element<N, std::tuple<Types...>>::type;
-		//return ((type*)aTypePointers[N])[index];
 	}
-
+	template<std::size_t N>
+	inline const auto& getConst(std::size_t index)const
+	{
+		return std::get<N>(typePointers)[index];
+	}
 	template<std::size_t N>
 	inline auto& get()
 	{
 		return std::get<N>(typePointers);
-		//using type = typename std::tuple_element<N, std::tuple<Types...>>::type;
-		//return ((type*)aTypePointers[N])[index];
 	}
-
+	template<std::size_t N>
+	inline const auto& getConst()const
+	{
+		return std::get<N>(typePointers);
+	}
 
 	bool erase(const Key key)
 	{
@@ -145,7 +205,33 @@ public:
 		map.erase(at_key);
 	}
 
+	std::size_t GetMemoryUsage()const
+	{
+		return byteWidth * allocated;
+	}
+	void Allocate(std::size_t newSize)
+	{
+		std::size_t newAllocated = newSize;
+		void* newData = operator new(newAllocated*byteWidth);
+		type newTypePointers;
 
+		std::get<0>(newTypePointers) = (Key*)newData;
+		setupPointers<1, Key, Types...>(newTypePointers, newAllocated);
+
+		memcpyTuple<0, Key, Types...>(newTypePointers, typePointers);
+
+		operator delete(data);
+		typePointers = newTypePointers;
+		allocated = newAllocated;
+		data = newData;
+	}
+	void Reinit(std::size_t newUsed)
+	{
+		used = newUsed;
+		map.clear();
+		for (std::size_t i = 0; i < used; i++)
+			map[std::get<0>(typePointers)[i]] = i;
+	}
 private:
 	void *data;
 	std::size_t used;
@@ -158,25 +244,7 @@ private:
 
 	std::unordered_map<Key, std::size_t, KeyHash> map;
 	
-	type asd;
-	void Allocate(std::size_t newSize)
-	{
-		std::size_t newAllocated = newSize;
-		void* newData = operator new(newAllocated*byteWidth);
-		type newTypePointers;
-
-		std::get<0>(newTypePointers) = (std::tuple_element<0, type>::type) newData;
-		setupPointers<1, Key, Types...>(newTypePointers, newAllocated);
-
-		memcpyTuple<0, Key, Types...>(newTypePointers, typePointers);
-
-		operator delete(data);
-		typePointers = newTypePointers;
-		allocated = newAllocated;
-		data = newData;
-		
-		int i = 0;
-	}
+	
 
 
 	template<std::size_t I = 0, typename... Types>
